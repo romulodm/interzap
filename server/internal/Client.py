@@ -1,6 +1,6 @@
 import threading
 
-from server.utils.messages import Messages
+from server.messages import Messages
 
 class Client(threading.Thread):
     def __init__(self, conn, addr, server):
