@@ -1,8 +1,8 @@
 import threading
 
-from server.messages import Messages
+from messages import Messages
 
-class Client(threading.Thread):
+class User(threading.Thread):
     def __init__(self, conn, addr, server):
         super().__init__()
         self.connection = conn
@@ -12,7 +12,9 @@ class Client(threading.Thread):
         self.number = None
         self.messages = Messages()
 
-    def run(self):
+    def start(self):
+        print(f'User connected with {self.address} address! \n')
+
         self.connection.sendall(b'Welcome to Interzap! Please enter your number: ')
         self.number = self.connection.recv(1024).decode().strip()
         self.server.register_client(self.number, self)

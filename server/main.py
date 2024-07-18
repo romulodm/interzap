@@ -1,8 +1,8 @@
-from server.internal.Server import Server
+from internal.ChatServer import ChatServer
 
 HOST = "127.0.0.1"
 PORT = 9070
 
 if __name__ == "__main__":
-    server = Server()
+    server = ChatServer(HOST, PORT)
     server.start()
