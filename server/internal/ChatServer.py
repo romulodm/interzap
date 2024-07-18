@@ -1,6 +1,8 @@
+import threading
 from socket import *
 from internal.User import User
 from messages import Messages
+
 
 class ChatServer:
     def __init__(self, host, port):
@@ -11,7 +13,7 @@ class ChatServer:
         self.online_users = {}
 
     def start(self):
-        
+
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
@@ -23,8 +25,12 @@ class ChatServer:
     def handle_connections(self):
         while True:
             conn, addr = self.server_socket.accept()
-            user = User(conn, addr, self)
-            user.start()
+            self.create_thread(conn, addr)
+
+    def create_thread(self, conn, addr):
+        user = User(conn, addr, self)
+        thread = threading.Thread(target=user.start)
+        thread.start()
 
     def register_user(self, number, user):
         self.online_users[number] = user
