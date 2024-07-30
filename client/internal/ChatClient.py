@@ -86,6 +86,25 @@ class ChatClient:
             else:
                 print("Unknow command.")
 
+    def handle_state(self):
+        while True:
+            message = input("What do you wanna do? ")
+
+            if message == "1":
+                self.state == "NEW_CONTACT"
+                break
+
+            elif message == "2":
+                self.state == "LIST_CONTACTS"
+                break
+
+            elif message == "3":
+                self.close()
+                break
+
+            else:
+                print("Unknow command.")
+
 
     def handle_user_input(self):
         try:
@@ -102,11 +121,15 @@ class ChatClient:
                     print("1 - Add new contact")
                     print("2 - List my contacts to read and send messages")
                     print("3 - Quit")
-                    
+                    self.handle_auth()
 
+                elif self.user and self.state == "NEW_CONTACT":
+                    pass
 
-                message = input()
-                self.client_socket.send(message.encode('utf-8'))
+                elif self.user and self.state == "LIST_CONTACTS":
+                    pass
+
+                
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
