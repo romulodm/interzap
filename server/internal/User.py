@@ -2,36 +2,70 @@ from messages import Messages
 
 class User:
     def __init__(self, conn, addr, server):
-        super().__init__()
-        self.connection = conn
-        self.address = addr
+        self.conn = conn
+        self.addr = addr
         self.server = server
-        self.online = True
-        self.number = None
+        self.authenticated = False
+        self.id = None
+        self.online = False
         self.messages = Messages()
 
+    def generate_user_id(self):
+        user_id = f'Client-{self.server.users_counter + 1:06d}'
+        return user_id
+
+    def handle_messages(self, message):
+        code = message[:2]
+        if code == "01":
+            if self.authenticated:
+                return False
+            
+            self.id = self.generate_user_id()
+            self.server.register_user(self.addr, self.id, self)
+            self.authenticated = True
+
+            self.conn.sendall(f"02{self.id}".encode("utf-8"))
+            return True
+
+        elif code == "03":
+            if self.authenticated:
+                return False
+            
+            id = message[2:]
+            if id in self.server.offline_users:
+                self.id = id
+                self.register_user(self.addr, self.id, self)
+                self.authenticated = True
+                self.conn.sendall(f"04{id}".encode("utf-8"))
+            else:
+                self.conn.sendall(f"04Error".encode("utf-8"))
+    
     def start(self):
-        print(f'User connected with {self.address} address! \n')
+        try:
+            print(f'User connected with {self.addr} address! \n')
+            
+            self.server.register_unauthenticated_user(self, self.addr)
+            self.conn.sendall(b'Welcome to Interzap!')
+              
+            self.online = True
+            while self.online:
+                message = self.conn.recv(1024)
+                if not message:
+                    break
 
-        self.connection.sendall(b'Welcome to Interzap!')
-        self.number = self.connection.recv(1024).decode().strip()
-        self.server.register_client(self.number, self)
-        print(f'User {self.number} connected from {self.address}')
+                message = message.decode()
+                self.handle_messages(message)
+            
+            self.online = False
+            self.server.unregister_user(self.id)
+            self.conn.close()
+            print(f'User with {self.addr} has disconnected.')
         
-        while self.online:
-            message = self.connection.recv(1024)
-            if not message:
-                break
+        except ConnectionResetError:
+            print(f"User with {self.addr} address has disconnected.")
+            self.online = False
+            self.authenticated = False
 
-            message = message.decode()
-            print(f'Received message from {self.number}: {message}')
-            recipient, msg = message.split(':', 1)
-            self.server.send_message(recipient, f'{self.number}: {msg}')
-        
-        self.online = False
-        self.server.unregister_client(self.number)
-        self.connection.close()
-        print(f'User {self.number} disconnected.')
 
     def send_message(self, message):
-        self.connection.sendall(message.encode())
+        self.conn.sendall(message.encode())
