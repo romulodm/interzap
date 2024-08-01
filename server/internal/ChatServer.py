@@ -10,39 +10,44 @@ class ChatServer:
         self.port = port
         self.server_socket = socket(AF_INET, SOCK_STREAM)
         self.users = {}
-        self.online_users = {}
+        self.unauthenticated_users = {}
 
+    def close(self):
+        self.server_socket.close()
     def start(self):
-
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
         self.handle_connections()
 
-    def close(self):
-        self.server_socket.close()
-
     def handle_connections(self):
         while True:
+            # Receives and accepts a new connection
             conn, addr = self.server_socket.accept()
-            self.create_thread(conn, addr)
+            
+            #Creates a User instance and a thread to validate received messages
+            user = User(conn, addr, self)
+            thread = threading.Thread(target=user.start)
+            thread.start()
 
-    def create_thread(self, conn, addr):
-        user = User(conn, addr, self)
-        thread = threading.Thread(target=user.start)
-        thread.start()
+    def register_unauthenticated_user(self, addr, user):
+        self.unauthenticated_users[addr] = user
 
-    def register_user(self, number, user):
-        self.online_users[number] = user
+    def register_user(self, addr, id, user):
+        self.users[id] = user
 
-    def unregister_user(self, number):
-        if number in self.online_users:
-            del self.online_users[number]
+        # Removing user from without authentication ones by your addr
+        if addr in self.unauthenticated_users:
+            del self.unauthenticated_users[addr]
 
-    def send_message(self, number, message):
-        if number in self.online_users:
-            self.online_users[number].send_message(message)
+    def unregister_user(self, id):
+        if id in self.users:
+            del self.users[id]
+
+    def send_message(self, id, message):
+        if id in self.users:
+            self.users[id].conn.sendall(f'{message}'.encode('utf-8'))
         else:
-            if number not in self.users:
-                self.users[number] = Messages()
-            self.users[number].insert(message)
+            if id not in self.users:
+                self.users[id].messages.insert(message)
+            
