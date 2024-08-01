@@ -36,16 +36,21 @@ class ChatServer:
         self.unauthenticated_users[addr] = user
 
     def register_user(self, addr, id, user):
-        self.online_users[id] = user
-        self.users_counter += 1
+        print(id, addr, user)
+        try:
+            self.online_users[id] = user
+            self.users_counter += 1
 
-        # Removing user from without authentication ones by your addr
-        if addr in self.unauthenticated_users:
-            del self.unauthenticated_users[addr]
+            # Removing user from without authentication ones by your addr
+            if addr in self.unauthenticated_users:
+                del self.unauthenticated_users[addr]
 
-        # Making user not be online
-        if id in self.offline_users:
-            del self.offline_users[id]
+            # Making user not be offline
+            if id in self.offline_users:
+                del self.offline_users[id]
+                
+        except Exception as e:
+            print("Error on register an user: ", e)
 
     def unregister_user(self, id):
         if id in self.online_users:
