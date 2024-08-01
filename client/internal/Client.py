@@ -1,7 +1,6 @@
-class User:
-    def __init__(self, id, name):
+class Client:
+    def __init__(self, id, socket):
         self.id = id
-        self.name = name
         self.contacts = []
 
     def add_contact(self, user):
