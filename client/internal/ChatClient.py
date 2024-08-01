@@ -57,30 +57,21 @@ class ChatClient:
         while True:
             message = input("You want login or register? ")
 
-            if message == "2":
-                name = input("Please enter your name: ")
-                self.client_socket.send(f"01{name}")
+            if message == "1":
+                self.client_socket.send(f"01")
+                print("Processing your registration request...")
                 return True
 
-            elif message == "1":
+            elif message == "2":
                 while True:
-                    credentials = input("Please enter your id and name (separated by space): ")
-                    parts = credentials.split()
-                    if len(parts) != 2:
-                        print("Unknown command.")
-                    
-                    id, name = parts
+                    id = input("Please enter your id: ")
+                    if len(id) == 13 :
+                        break
+                    else: 
+                        print("Invalid ID - must be have 13 digits.")
 
-                    try:
-                        id = int(id)
-                        if len(id) == 13 :
-                            break
-                        else: 
-                            print("Invalid ID (must be have 13 digits).")
-                    except ValueError:
-                        print("Invalid ID.")
-
-                self.client_socket.send(f"03{id}{name}")
+                self.client_socket.send(f"03{id}")
+                print("Processing your login request...")
                 return True
 
             else:
@@ -111,7 +102,7 @@ class ChatClient:
             while True:
                 if not self.user:
                     print("You need to autenticate to enter on Interzap:\n")
-                    print("Type 1 to login.\nor\nType 2 to register.")
+                    print("Type 1 to register.\nor\nType 2 to login.")
                     auth = self.handle_auth()
                     if auth:
                         print("Message sended to server. Waiting for response...")
