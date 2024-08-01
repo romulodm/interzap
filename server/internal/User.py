@@ -33,11 +33,15 @@ class User:
             
             id = message[2:]
             if id in self.server.offline_users:
-                self.id = id
-                self.register_user(self.addr, self.id, self)
-                self.authenticated = True
-                self.conn.sendall(f"04{id}".encode("utf-8"))
+                try:
+                    self.id = message[2:]
+                    self.server.register_user(self.addr, id, self)
+                    self.authenticated = True
+                    self.conn.sendall(f"04{message[2:]}".encode("utf-8"))
+                except Exception as e:
+                    print("Error on login: ", e)
             else:
+                print("Aq2")
                 self.conn.sendall(f"04Error".encode("utf-8"))
     
     def start(self):
@@ -63,6 +67,7 @@ class User:
         
         except ConnectionResetError:
             print(f"User with {self.addr} address has disconnected.")
+            self.server.unregister_user(self.id)
             self.online = False
             self.authenticated = False
 
