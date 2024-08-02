@@ -5,11 +5,13 @@ from typing import Dict
 from internal.User import User
 from internal.Message import Message
 from internal.Group import Group
+from internal.Database import Database
 
 class ChatServer:
-    def __init__(self, host, port):
+    def __init__(self, host, port, db: Database):
         self.host = host
         self.port = port
+        self.db = db
         self.server_socket = socket(AF_INET, SOCK_STREAM)
         self.users_counter = 0
         self.online_users: Dict[str, User] = {}
@@ -21,7 +23,34 @@ class ChatServer:
     def close(self):
         self.server_socket.close()
 
+    def load_users_from_db(self):
+        # Load all users from the database
+        users = self.db.get_all_users()
+        for user in users:
+            user_id = user[0]
+            # Create user instances and place them in sefl.offline_users
+            self.offline_users[user_id] = User(self, None, None)
+            self.offline_users[user_id].id = user_id
+            self.offline_users[user_id].messages = []
+
+    def load_groups_from_db(self):
+        # Load all groups from the database
+        groups = self.db.get_all_groups()
+        for group in groups:
+            group_id = group[0]
+            # Create groups intances and place them in self.groups
+            members = self.db.get_group_members(group_id)
+            member_ids = [member[0] for member in members]
+            self.groups[group_id] = Group(group_id, None, member_ids)
+
     def start(self):
+        try:
+            self.load_users_from_db()
+            self.load_groups_from_db()
+        
+        except Exception as e:
+            print("An error ocurred on load database: ", e)
+
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen()
         print(f'Server running on: {self.host}:{self.port}')
@@ -98,6 +127,8 @@ class ChatServer:
         
         if id_creator in self.online_users:
             self.online_users[id_creator].conn.sendall(f"11{group.id}{group.creation}{str(time.time())[:10]}{members}".encode("utf-8"))
+
+            
 
 
 

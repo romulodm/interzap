@@ -1,8 +1,15 @@
 from internal.ChatServer import ChatServer
+from internal.Database import Database
 
 HOST = "127.0.0.1"
 PORT = 9070
 
 if __name__ == "__main__":
-    server = ChatServer(HOST, PORT)
-    server.start()
+    try:
+        db = Database()
+        db.start_db()
+        
+        server = ChatServer(HOST, PORT, db)
+        server.start()
+    except Exception as e:
+        print("An error ocurred on main.py: ", e)
