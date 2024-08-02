@@ -1,9 +1,10 @@
 import threading
+import time
 from socket import *
+from typing import Dict
 from internal.User import User
 from internal.Message import Message
-from typing import Dict
-
+from internal.Group import Group
 class ChatServer:
     def __init__(self, host, port):
         self.host = host
@@ -13,6 +14,8 @@ class ChatServer:
         self.online_users: Dict[str, User] = {}
         self.offline_users: Dict[str, User] = {}
         self.unauthenticated_users: Dict[str, User] = {}
+        self.groups: Dict[str, Group] = {}
+        self.groups_counter = 0
 
     def close(self):
         self.server_socket.close()
@@ -37,7 +40,6 @@ class ChatServer:
         self.unauthenticated_users[addr] = user
 
     def register_user(self, addr, id, user: User):
-        print(id, addr, user)
         try:
             self.online_users[id] = user
             self.users_counter += 1
@@ -60,6 +62,8 @@ class ChatServer:
             self.offline_users[id] = user
 
     def send_message(self, id_sender, id_receiver, time, message):
+        self.confirm_receipt(id_sender)
+
         if id_receiver in self.online_users:
             # If the user is online, send them a message
             self.online_users[id_receiver].conn.sendall(f"06{id_sender}{id_receiver}{time}{message}".encode("utf-8"))
@@ -71,6 +75,17 @@ class ChatServer:
         else:
             # If the user is not in the dictionaries, we warn that it does not exist (to sender)
             self.online_users[id_sender].conn.sendall(f"The user does not exist.".encode("utf-8"))
+
+    def create_group(self, id_creator, time, members):
+        group = Group(id_creator, time, members)
+        self.groups[group.id] = group
+        for member_id in members:
+            if member_id in self.online_users:
+                self.online_users[member_id].conn.sendall(f"11{group.id}{group.creation}{str(time.time())[:10]}{members}".encode("utf-8"))
+        
+        if id_creator in self.online_users:
+            self.online_users[id_creator].conn.sendall(f"11{group.id}{group.creation}{str(time.time())[:10]}{members}".encode("utf-8"))
+
 
 
 
