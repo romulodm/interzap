@@ -1,10 +1,13 @@
+from internal.Message import Message
+
 class Node:
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, message):
+        self.message: Message = message
         self.next = None
 
-class Messages:
-    def __init__(self):
+class Queue:
+    def __init__(self, server):
+        self.server = server
         self.ini = None
         self.last = None
         self.size = 0
@@ -14,7 +17,7 @@ class Messages:
     
     def get(self):
         if not self.empty():
-            return self.ini.data
+            return self.ini.message
         
     def remove(self):
         if not self.empty():
@@ -23,8 +26,8 @@ class Messages:
             if self.empty():
                 self.last = None
 
-    def insert(self, data):
-        new_message = Node(data)
+    def insert(self, message: Message):
+        new_message = Node(message)
         if self.empty():
             self.ini = new_message
             self.last = new_message
