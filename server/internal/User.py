@@ -2,7 +2,7 @@ from internal.Queue import Queue
 
 class User:
     def __init__(self, server, conn, addr):
-        self.server = server # ChatServer instance
+        self.server = server # ChatServer instance, no typing to avoid circular import
         self.conn = conn
         self.addr = addr
         self.authenticated = False
@@ -10,10 +10,18 @@ class User:
         self.online = False
         self.messages = Queue(self.server)
 
-    def generate_user_id(self):
-        user_id = f'Client-{self.server.users_counter + 1:06d}'
-        return user_id
+    def set_id(self, id):
+        self.id = id
 
+    def set_conn(self, conn):
+        self.conn = conn
+
+    def set_addr(self, addr):
+        self.addr = addr
+
+    def generate_user_id(self):
+        return f'Client-{self.server.users_counter + 1:06d}'
+    
     def handle_messages(self, message):
         code = message[:2]
         if code == "01":
@@ -34,14 +42,15 @@ class User:
             id = message[2:]
             if id in self.server.offline_users:
                 try:
-                    self.id = message[2:]
-                    self.server.register_user(self.addr, id, self)
-                    self.authenticated = True
-                    self.conn.sendall(f"04{message[2:]}".encode("utf-8"))
+                    if self.server.login_user(self.addr, id, self):
+                        self.id = message[2:]
+                        self.authenticated = True
+                        self.conn.sendall(f"04{message[2:]}".encode("utf-8"))
+                    else:
+                        self.conn.sendall(f"04Error".encode("utf-8"))
                 except Exception as e:
                     print("Error on login: ", e)
             else:
-                print("Aq2")
                 self.conn.sendall(f"04Error".encode("utf-8"))
     
     def start(self):
@@ -49,7 +58,7 @@ class User:
             print(f'User connected with {self.addr} address! \n')
             
             self.server.register_unauthenticated_user(self, self.addr)
-            self.conn.sendall(b'Welcome to Interzap!')
+            self.conn.sendall(f'Welcome to Interzap!'.encode("utf-8"))
               
             self.online = True
             while self.online:
@@ -70,7 +79,3 @@ class User:
             self.server.unregister_user(self.id)
             self.online = False
             self.authenticated = False
-
-
-    def send_message(self, message):
-        self.conn.sendall(message.encode())
