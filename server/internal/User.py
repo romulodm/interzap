@@ -1,14 +1,14 @@
-from messages import Messages
+from internal.Queue import Queue
 
 class User:
-    def __init__(self, conn, addr, server):
+    def __init__(self, server, conn, addr):
+        self.server = server # ChatServer instance
         self.conn = conn
         self.addr = addr
-        self.server = server
         self.authenticated = False
         self.id = None
         self.online = False
-        self.messages = Messages()
+        self.messages = Queue(self.server)
 
     def generate_user_id(self):
         user_id = f'Client-{self.server.users_counter + 1:06d}'
