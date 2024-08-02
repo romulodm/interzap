@@ -5,6 +5,7 @@ from typing import Dict
 from internal.User import User
 from internal.Message import Message
 from internal.Group import Group
+
 class ChatServer:
     def __init__(self, host, port):
         self.host = host
@@ -75,6 +76,18 @@ class ChatServer:
         else:
             # If the user is not in the dictionaries, we warn that it does not exist (to sender)
             self.online_users[id_sender].conn.sendall(f"The user does not exist.".encode("utf-8"))
+
+    def confirm_receipt(self, id_sender):
+        if id_sender in self.online_users:
+            self.online_users[id_sender].conn.sendall(f"Message arrived on the server!")
+
+    def confirm_delivery(self, id_sender, id_receiver, time):
+        if id_sender in self.online_users:
+            self.online_users[id_sender].conn.sendall(f"07{id_receiver}{str(time.time())[:10]}")
+
+    def confirm_read(self, id_sender, id_receiver, time):
+        if id_sender in self.online_users:
+            self.online_users[id_sender].conn.sendall(f"08{id_receiver}{str(time.time())[:10]}")
 
     def create_group(self, id_creator, time, members):
         group = Group(id_creator, time, members)
