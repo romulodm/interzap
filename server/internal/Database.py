@@ -41,7 +41,7 @@ class Database:
     
     def create_user(self, id):
         try:
-            self.cursor.execute("INSERT INTO users VALUES(?)", (id))
+            self.cursor.execute("INSERT INTO users VALUES(?)", (id,))
             self.conn.commit()
             return True
         except Exception as e:
