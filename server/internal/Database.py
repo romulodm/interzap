@@ -2,7 +2,7 @@ import sqlite3
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect("interzap.db")
+        self.conn = sqlite3.connect("interzap.db", check_same_thread=False)
         self.cursor = self.conn.cursor()
 
     def start_db(self):
@@ -38,6 +38,7 @@ class Database:
             self.conn.commit()
             return True
         except Exception as e:
+            print("Error on create user on DB: ", e)
             return False
     
     def create_group(self, id):
