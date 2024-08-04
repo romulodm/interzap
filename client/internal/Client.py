@@ -11,6 +11,7 @@ class Client:
     def add_contact(self, id):
         if id not in self.contacts:
             self.contacts.append(id)
+            print("Contact added.")
         else:
             print("You have already added this contact.")
 

@@ -25,7 +25,7 @@ class ChatClient:
                 
                 elif message[:2] == "02":
                     id = message[2:]
-                    self.client = Client(id, self.client_socket)
+                    self.client = Client(id)
                     print(f"Authenticated with id: {id}\n")
                 
                 elif message[:2] == "04":
@@ -34,7 +34,7 @@ class ChatClient:
                         print("An error occurred with your login.")
 
                     else: 
-                        self.client = Client(response, self.client_socket)
+                        self.client = Client(response)
                         print(f"Authenticated with id: {response}\n")              
                     
             except Exception as e:
@@ -49,6 +49,7 @@ class ChatClient:
             if message == "1":
                 self.client_socket.send(b'01')
                 print("Processing your registration request...")
+                time.sleep(0.5)
                 return True
 
             elif message == "2":
@@ -70,20 +71,41 @@ class ChatClient:
             else:
                 print("Unknow command.")
 
+    def handle_new_contact(self):
+        print()
+        while self.alive and self.client != None:
+            contact_id = input('Enter the ID of the user you want to add or type "N" to cancel: Client-')
+
+            if contact_id == "N" or contact_id == "n":
+                print()
+                self.state = None
+                return True
+
+            elif len(contact_id) != 6:
+                print("ID must have 6 digits.")
+            
+            else:
+                self.client.add_contact("Client-" + contact_id)
+
     def handle_state(self):
+        print("List of possibles commands:")
+        print("1 - Add new contact")
+        print("2 - Create new group")
+        print("3 - List my contacts and groups to read and send messages")
+        print("4 - Quit")
         while self.alive and self.client:
             message = input("What do you wanna do now on Interzap? ")
 
             if message == "1":
-                self.state == "NEW_CONTACT"
+                self.state = "NEW_CONTACT"
                 break
 
             if message == "2":
-                self.state == "NEW_GROUP"
+                self.state = "NEW_GROUP"
                 break
 
             elif message == "3":
-                self.state == "LIST_CONTACTS_AND_GROUPS"
+                self.state = "LIST_CONTACTS_AND_GROUPS"
                 break
 
             elif message == "4":
@@ -103,15 +125,10 @@ class ChatClient:
                     self.handle_auth()
     
                 elif self.client and self.state == None:
-                    print("List of possibles commands:")
-                    print("1 - Add new contact")
-                    print("2 - Create new group")
-                    print("3 - List my contacts and groups to read and send messages")
-                    print("4 - Quit")
                     self.handle_state()
 
                 elif self.client and self.state == "NEW_CONTACT":
-                    pass
+                    self.handle_new_contact()
 
                 elif self.client and self.state == "NEW_GROUP":
                     pass
