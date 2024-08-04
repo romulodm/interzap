@@ -19,6 +19,13 @@ class Database:
         """)
         self.conn.commit()
 
+    def reset_db(self):
+        self.cursor.execute("DROP TABLE IF EXISTS user_groups")
+        self.cursor.execute("DROP TABLE IF EXISTS users")
+        self.cursor.execute("DROP TABLE IF EXISTS groups")
+        self.conn.commit()
+        self.start_db()
+
     def get_all_users(self):
         return self.cursor.execute("SELECT * FROM users").fetchall()
     
