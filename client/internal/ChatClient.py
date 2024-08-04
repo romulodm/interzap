@@ -1,4 +1,6 @@
 from socket import *
+import os
+import json
 import threading
 import time
 from internal.Client import Client
@@ -11,6 +13,7 @@ class ChatClient:
         self.client = None
         self.state = None
         self.alive = True
+        self.selected_contact = None
 
     def close(self):
         self.alive = False
@@ -87,6 +90,31 @@ class ChatClient:
             else:
                 self.client.add_contact("Client-" + contact_id)
 
+    def handle_list_contacts(self):
+        print()
+        while self.alive and self.client != None:
+            print("Your contacts and groups:")
+            if len(self.client.contacts) == 0:
+                print("You have no contacts and/or groups added.\n")
+                self.state = None
+                break
+            else:
+                sorted_contacts = sorted(self.client.contacts)
+                for i, contact in enumerate(sorted_contacts, start=1):
+                    print(f"{i} - {contact}")
+
+                choice = int(input('Which contact or group do you want to talk to? Enter the number of type "N" to cancel '))
+                if choice == "N" or choice == "n":
+                    self.state = None
+                    break
+
+                elif 1 <= choice <= len(sorted_contacts):
+                    self.selected_contact = sorted_contacts[choice - 1]
+                    print(f"Now talking to: {self.selected_contact}\n")
+
+                else:
+                    print("Invalid choice, please enter a number corresponding to the contacts/groups listed.\n")
+
     def handle_state(self):
         print("List of possibles commands:")
         print("1 - Add new contact")
@@ -115,7 +143,6 @@ class ChatClient:
             else:
                 print("Unknow command.")
 
-
     def handle_user_input(self):
         try:
             while self.alive:
@@ -134,7 +161,7 @@ class ChatClient:
                     pass
 
                 elif self.client and self.state == "LIST_CONTACTS_AND_GROUPS":
-                    pass
+                    self.handle_list_contacts()
 
                 
         except Exception as e:
