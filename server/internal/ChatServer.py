@@ -26,6 +26,8 @@ class ChatServer:
     def load_users_from_db(self):
         # Load all users from the database
         users = self.db.get_all_users()
+                
+        self.users_counter = len(users)
         for user in users:
             user_id = user[0]
             # Create user instances and place them in sefl.offline_users
@@ -61,7 +63,7 @@ class ChatServer:
             # Receives and accepts a new connection
             conn, addr = self.server_socket.accept()
             
-            #Creates a User instance and a thread to validate received messages
+            # Creates a User instance and a thread to validate received messages
             user = User(self, conn, addr)
             thread = threading.Thread(target=user.start)
             thread.start()
@@ -74,6 +76,9 @@ class ChatServer:
             self.online_users[id] = user
             self.users_counter += 1
 
+            # Adding user on DB
+            self.db.create_user(id)
+
             # Removing user from without authentication ones by your addr
             if addr in self.unauthenticated_users:
                 del self.unauthenticated_users[addr]
@@ -82,16 +87,21 @@ class ChatServer:
             print("Error on register an user: ", e)
 
     def login_user(self, addr, id, user: User):
-        # Check if user exists and making user not be offline
-        if id in self.offline_users:    
-            self.online_users[id] = user
-            del self.offline_users[id]
-            
-            # Removing user from without authentication ones by your addr
-            if addr in self.unauthenticated_users:
-                del self.unauthenticated_users[addr]
-            return True
-        return False
+        try:
+            # Check if user exists and making user not be offline
+            if id in self.offline_users:    
+                self.online_users[id] = user
+                del self.offline_users[id]
+                
+                # Removing user from without authentication ones by your addr
+                if addr in self.unauthenticated_users:
+                    del self.unauthenticated_users[addr]
+                return True
+            return False
+        
+        except Exception as e:
+            print("Error on login an user: ", e)
+            return False
 
     def unregister_user(self, id):
         if id in self.online_users:
