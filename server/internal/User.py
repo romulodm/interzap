@@ -1,4 +1,4 @@
-from internal.Queue import Queue
+from internal.queue import Queue
 
 class User:
     def __init__(self, server, conn, addr):
@@ -62,9 +62,6 @@ class User:
             
             self.server.send_message(sender_id, receiver_id, time, msg)
 
-            
-            
-    
     def start(self):
         try:
             print(f'User connected with {self.addr} address! \n')

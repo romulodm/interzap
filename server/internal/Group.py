@@ -1,7 +1,7 @@
 import time
 from typing import List
-from internal.User import User
-from internal.Message import Message
+from internal.user import User
+from internal.message import Message
 
 class Group:
     def __init__(self, server, users):

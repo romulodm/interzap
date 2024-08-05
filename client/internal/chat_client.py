@@ -4,7 +4,7 @@ import json
 import threading
 import time
 
-from internal.Client import Client
+from internal.client import Client
 from util.convert_posix import convert_posix_to_hours
 
 class ChatClient:
@@ -40,8 +40,15 @@ class ChatClient:
 
                     else: 
                         self.client = Client(response)
-                        print(f"Authenticated with id: {response}\n")              
+                        print(f"Authenticated with id: {response}\n")       
+
+                elif message[:2] == "06":
+                    # Here I divide each part of the message received based on the expected protocol
+                    sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
                     
+                    self.client.add_message(sender_id, receiver_id, msg, time)
+                    self.client_socket.send("ACK06".encode("utf-8"))          
+                            
             except Exception as e:
                 print(f"An error occurred on handler a message received: {e}")
                 self.close()

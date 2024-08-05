@@ -1,5 +1,6 @@
 class Message:
-    def __init__(self, sender_id, receiver_id, time, content):
+    def __init__(self, code, sender_id, receiver_id, time, content):
+        self.code = code
         self.sender_id = sender_id
         self.receiver_id = receiver_id
         self.time = time

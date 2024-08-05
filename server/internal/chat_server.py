@@ -2,10 +2,10 @@ import threading
 import time
 from socket import *
 from typing import Dict
-from internal.User import User
-from internal.Message import Message
-from internal.Group import Group
-from internal.Database import Database
+from internal.user import User
+from internal.message import Message
+from internal.group import Group
+from internal.database import Database
 
 class ChatServer:
     def __init__(self, host, port, db: Database):
@@ -147,10 +147,4 @@ class ChatServer:
         
         if id_creator in self.online_users:
             self.online_users[id_creator].conn.sendall(f"11{group.id}{group.creation}{str(time.time())[:10]}{members}".encode("utf-8"))
-
-            
-
-
-
-
-            
+  
