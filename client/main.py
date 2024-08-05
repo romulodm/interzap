@@ -1,4 +1,4 @@
-from client.internal.chat_client import ChatClient
+from internal.chat_client import ChatClient
 
 HOST = "127.0.0.1"
 PORT = 9070

@@ -1,4 +1,4 @@
-from server.internal.chat_server import ChatServer
+from internal.chat_server import ChatServer
 from internal.database import Database
 
 HOST = "127.0.0.1"
