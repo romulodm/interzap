@@ -7,10 +7,12 @@ class Client:
         self.id = id
         self.contacts = []
         self.messages = {}
+        self.load_data_from_file()
 
     def add_contact(self, id):
         if id not in self.contacts:
             self.contacts.append(id)
+            self.save_data_to_file()
             print("Contact added.")
         else:
             print("You have already added this contact.")
@@ -18,6 +20,8 @@ class Client:
     def remove_contact(self, id):
         if id in self.contacts:
             self.contacts.remove(id)
+            self.save_data_to_file()
+            print("Contact removed.")
         else:
             print("Contact does not exist.")
 
@@ -43,6 +47,8 @@ class Client:
             self.messages[sender_id].append(message_data)
             self.messages[sender_id].sort(key=lambda x: x['time'])
 
+        self.save_data_to_file()
+
     def save_data_to_file(self):
         filename = f"client/backups/{self.id}.json"
         data = {
@@ -63,3 +69,5 @@ class Client:
             self.contacts = []
             self.messages = {}
             
+    def get_messages_with_contact(self, client_id):
+        return self.messages.get(client_id, [])
