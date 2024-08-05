@@ -3,7 +3,9 @@ import os
 import json
 import threading
 import time
+
 from internal.Client import Client
+from util.convert_posix import convert_posix_to_hours
 
 class ChatClient:
     def __init__(self, host, port):
@@ -103,17 +105,34 @@ class ChatClient:
                 for i, contact in enumerate(sorted_contacts, start=1):
                     print(f"{i} - {contact}")
 
-                choice = int(input('Which contact or group do you want to talk to? Enter the number of type "N" to cancel '))
-                if choice == "N" or choice == "n":
+                choice = input('Which contact or group do you want to talk to? Enter the number or type "N" to cancel ')
+                if str(choice) == "N" or choice == str("n"):
                     self.state = None
                     break
 
-                elif 1 <= choice <= len(sorted_contacts):
-                    self.selected_contact = sorted_contacts[choice - 1]
-                    print(f"Now talking to: {self.selected_contact}\n")
+                elif 1 <= int(choice) <= len(sorted_contacts) and choice.isdigit():
+                    self.selected_contact = sorted_contacts[int(choice) - 1]
+                    self.display_chat()
 
                 else:
                     print("Invalid choice, please enter a number corresponding to the contacts/groups listed.\n")
+
+    def display_chat(self):
+        while self.selected_contact:
+            messages = self.client.get_messages_with_contact(self.selected_contact)
+            for message in messages:
+                print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}\n")
+            
+            msg = input('Type your message here or type "N" to exit: ')
+            if msg == "N" or msg == "n":
+                self.state = "LIST_CONTACTS_AND_GROUPS"
+                break
+            elif len(msg) > 218:
+                print("Your message is too long (max 218 characters).")
+            else:
+                self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(time.time())[:10]}{msg}".encode("utf-8"))
+                self.client.add_message(self.client.id, self.selected_contact, msg)
+
 
     def handle_state(self):
         print("List of possibles commands:")
