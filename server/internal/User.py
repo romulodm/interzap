@@ -52,6 +52,18 @@ class User:
                     print("Error on login: ", e)
             else:
                 self.conn.sendall(f"04Error".encode("utf-8"))
+
+        elif code == "05":
+            if not self.authenticated:
+                return False
+            
+            # Here I divide each part of the message received based on the expected protocol
+            sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
+            
+            self.server.send_message(sender_id, receiver_id, time, msg)
+
+            
+            
     
     def start(self):
         try:

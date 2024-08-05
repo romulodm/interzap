@@ -26,7 +26,7 @@ class ChatServer:
     def load_users_from_db(self):
         # Load all users from the database
         users = self.db.get_all_users()
-                
+
         self.users_counter = len(users)
         for user in users:
             user_id = user[0]
@@ -38,6 +38,8 @@ class ChatServer:
     def load_groups_from_db(self):
         # Load all groups from the database
         groups = self.db.get_all_groups()
+
+        self.groups_counter = len(groups)
         for group in groups:
             group_id = group[0]
             # Create groups intances and place them in self.groups
