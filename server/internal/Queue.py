@@ -1,4 +1,4 @@
-from internal.Message import Message
+from internal.message import Message
 
 class Node:
     def __init__(self, message):
