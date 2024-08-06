@@ -111,12 +111,21 @@ class ChatServer:
             del self.online_users[id]
             self.offline_users[id] = user
 
-    def send_message(self, id_sender, id_receiver, time, message):
-        self.confirm_receipt(id_sender)
-
+    def send_message(self, id_sender, id_receiver, time, message): 
         if id_receiver in self.online_users:
             # If the user is online, send them a message
-            self.online_users[id_receiver].conn.sendall(f"06{id_sender}{id_receiver}{time}{message}".encode("utf-8"))
+            try:
+                error = self.online_users[id_receiver].conn.send(f"06{id_sender}{id_receiver}{time}{message}".encode("utf-8"))
+                
+                # With sendall method: None is returned on success
+                if error == None:
+                    # So if the message was sent, I confirm delivery to the sender
+                    error = self.online_users[id_sender].conn.send(f"07{id_receiver}{time}".encode("utf-8"))
+
+            except Exception as e:
+                print("An error ocurred on send message.")
+            pass
+
         elif id_receiver in self.offline_users:
             # If the user is not online, I create a message with the content
             msg = Message(id_sender, id_receiver, time, message)
@@ -128,7 +137,7 @@ class ChatServer:
 
     def confirm_receipt(self, id_sender):
         if id_sender in self.online_users:
-            self.online_users[id_sender].conn.sendall(f"Message arrived on the server!")
+            self.online_users[id_sender].conn.sendall(f"Message arrived on the server!".encode("utf-8"))
 
     def confirm_delivery(self, id_sender, id_receiver, time):
         if id_sender in self.online_users:
