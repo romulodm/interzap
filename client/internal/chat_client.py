@@ -16,6 +16,8 @@ class ChatClient:
         self.state = None
         self.alive = True
         self.selected_contact = None
+        self.last_message_received = None
+        self.check_message = False # Variable to control the running state of the check_message thread on chat
 
     def close(self):
         self.alive = False
@@ -46,8 +48,14 @@ class ChatClient:
                     # Here I divide each part of the message received based on the expected protocol
                     sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
                     
+                    self.last_message_received = sender_id
                     self.client.add_message(sender_id, receiver_id, msg, time)
-                    self.client_socket.send("ACK06".encode("utf-8"))          
+
+                elif message[:2] == "07":
+                    # Here I divide each part of the message received based on the expected protocol
+                    receiver_id, time = message[2:15], message[15:25]
+                    
+                    # TODO: Here i need change the message status because the server is confirming that the message has been delivered to the user (receiver_id)
                             
             except Exception as e:
                 print(f"An error occurred on handler a message received: {e}")
@@ -119,27 +127,51 @@ class ChatClient:
 
                 elif 1 <= int(choice) <= len(sorted_contacts) and choice.isdigit():
                     self.selected_contact = sorted_contacts[int(choice) - 1]
-                    self.display_chat()
+                    self.chat()
 
                 else:
                     print("Invalid choice, please enter a number corresponding to the contacts/groups listed.\n")
 
-    def display_chat(self):
-        while self.selected_contact:
-            messages = self.client.get_messages_with_contact(self.selected_contact)
-            for message in messages:
-                print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}\n")
+    def chat(self):
+        try:
+            self.display_messages()
             
-            msg = input('Type your message here or type "N" to exit: ')
-            if msg == "N" or msg == "n":
-                self.state = "LIST_CONTACTS_AND_GROUPS"
-                break
-            elif len(msg) > 218:
-                print("Your message is too long (max 218 characters).")
-            else:
-                self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(time.time())[:10]}{msg}".encode("utf-8"))
-                self.client.add_message(self.client.id, self.selected_contact, msg)
+            self.check_message = True
+            message_thread = threading.Thread(target=self.check_for_new_messages)
+            message_thread.start()
+            
+            while self.selected_contact:
+                msg = input('Type your message here or type "N" to exit: ')
+                if msg == "N" or msg == "n":
+                    self.state = "LIST_CONTACTS_AND_GROUPS"
+                    self.selected_contact = None
+                    break
+                elif len(msg) > 218:
+                    print("Your message is too long (max 218 characters).")
+                else:
+                    self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(time.time())[:10]}{msg}".encode("utf-8"))
+                    self.client.add_message(self.client.id, self.selected_contact, msg)
 
+            self.check_message = False # Stop the message_thread
+            message_thread.join() # Wait for the message_thread to finish
+        
+        except Exception as e:
+            print("An error ocurred on chat: ", e)
+            self.check_message = False
+            self.selected_contact = None
+    
+    def display_messages(self):
+        print(f"\nYour messages with {self.selected_contact} user:\n")
+        messages = self.client.get_messages_with_contact(self.selected_contact)
+        for message in messages:
+            print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}\n")
+
+    def check_for_new_messages(self):
+        while self.check_message:
+            if self.selected_contact and self.last_message_received == self.selected_contact:
+                self.display_messages()
+                self.last_message_received = None
+            time.sleep(1)
 
     def handle_state(self):
         print("List of possibles commands:")
