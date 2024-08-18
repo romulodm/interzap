@@ -31,22 +31,40 @@ class Client:
         
         message_data = {
             'sender': sender_id,
-            'time': timestamp,
-            'content': content
+            'time': int(timestamp),
+            'content': content,
+            'delivered': False,
+            'read': False
         }
-
+        
+        # If I sended the message, I use receiver_id to save on JSON
         if sender_id == self.id:
             if receiver_id not in self.messages:
                 self.messages[receiver_id] = []
             self.messages[receiver_id].append(message_data)
             self.messages[receiver_id].sort(key=lambda x: x['time'])
         
-        if receiver_id == self.id:
+        # If I received the message, I use sener_id to save on JSON
+        else:
             if sender_id not in self.messages:
                 self.messages[sender_id] = []
             self.messages[sender_id].append(message_data)
             self.messages[sender_id].sort(key=lambda x: x['time'])
 
+        self.save_data_to_file()
+
+    def make_message_delivered(self, receiver_id, timestamp):
+        for message in self.messages[receiver_id]:
+            if message['time'] <= timestamp and message['delivered'] != True:
+                message['delivered'] = True
+       
+        self.save_data_to_file()
+
+    def make_message_read(self, receiver_id, timestamp):
+        for message in self.messages[receiver_id]:
+            if message['time'] <= timestamp and message['read'] != True:
+                message['read'] = True
+          
         self.save_data_to_file()
 
     def save_data_to_file(self):

@@ -1,6 +1,5 @@
 from socket import *
-import os
-import json
+import keyboard
 import threading
 import time
 
@@ -30,12 +29,12 @@ class ChatClient:
                 if message == "Welcome to Interzap!":
                     print(f"{message}\n")
                 
-                elif message[:2] == "02":
+                elif message[:2] == "02": # his message indicates that I was able to register
                     id = message[2:]
                     self.client = Client(id)
                     print(f"Authenticated with id: {id}\n")
                 
-                elif message[:2] == "04":
+                elif message[:2] == "04": # This message i created to confirm login and authenticate a user (overengineering)
                     response = message[2:]
                     if response == "Error":
                         print("An error occurred with your login.")
@@ -44,18 +43,30 @@ class ChatClient:
                         self.client = Client(response)
                         print(f"Authenticated with id: {response}\n")       
 
-                elif message[:2] == "06":
+                elif message[:2] == "06": # I received a message
+
                     # Here I divide each part of the message received based on the expected protocol
                     sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
                     
                     self.last_message_received = sender_id
                     self.client.add_message(sender_id, receiver_id, msg, time)
 
-                elif message[:2] == "07":
+                elif message[:2] == "07": # Message delivered
+
                     # Here I divide each part of the message received based on the expected protocol
                     receiver_id, time = message[2:15], message[15:25]
-                    
-                    # TODO: Here i need change the message status because the server is confirming that the message has been delivered to the user (receiver_id)
+                    self.client.make_message_delivered(receiver_id, time)
+
+                elif message[:2] == "09": # Message read
+
+                    # Here I divide each part of the message received based on the expected protocol
+                    receiver_id, time = message[2:15], message[15:25]
+                    self.client.make_message_read(receiver_id, time)
+
+                elif message[:2] == "11": # I'm a part of group now
+
+                    # TODO: separate the group creation string and add the group to contacts
+                    pass
                             
             except Exception as e:
                 print(f"An error occurred on handler a message received: {e}")
@@ -135,43 +146,46 @@ class ChatClient:
     def chat(self):
         try:
             self.display_messages()
-            
-            self.check_message = True
-            message_thread = threading.Thread(target=self.check_for_new_messages)
-            message_thread.start()
-            
+            print('Press ENTER to type your message or press "N" to exit!')
             while self.selected_contact:
-                msg = input('Type your message here or type "N" to exit: ')
-                if msg == "N" or msg == "n":
+                if keyboard.is_pressed('n') or keyboard.is_pressed('N'):
                     self.state = "LIST_CONTACTS_AND_GROUPS"
                     self.selected_contact = None
-                    break
-                elif len(msg) > 218:
-                    print("Your message is too long (max 218 characters).")
-                else:
-                    self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(time.time())[:10]}{msg}".encode("utf-8"))
-                    self.client.add_message(self.client.id, self.selected_contact, msg)
+                
+                if keyboard.is_pressed('enter'):
+                    msg = input('Type your message or press ENTER to return: ')
+                    if len(msg) > 218:
+                        print("Your message is too long (max 218 characters).")
+                        print('Press ENTER to type your message or press "N" to exit!')
 
-            self.check_message = False # Stop the message_thread
-            message_thread.join() # Wait for the message_thread to finish
-        
+                    elif len(msg) > 0:
+                        self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(time.time())[:10]}{msg}".encode("utf-8"))
+                        self.client.add_message(self.client.id, self.selected_contact, msg)
+                        print('Press ENTER to type your message or press "N" to exit!')
+
+                self.check_for_new_messages()
+
         except Exception as e:
             print("An error ocurred on chat: ", e)
-            self.check_message = False
             self.selected_contact = None
     
     def display_messages(self):
         print(f"\nYour messages with {self.selected_contact} user:\n")
         messages = self.client.get_messages_with_contact(self.selected_contact)
         for message in messages:
-            print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}\n")
+            print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}")
+            if message['delivered'] == True and message['read'] == True:
+                print('✓✓✓')
+            elif  message['delivered'] == True and message['read'] == False:
+                print('✓✓')
+            else:
+                print('✓')
 
     def check_for_new_messages(self):
-        while self.check_message:
-            if self.selected_contact and self.last_message_received == self.selected_contact:
-                self.display_messages()
-                self.last_message_received = None
-            time.sleep(1)
+        if self.selected_contact and self.last_message_received == self.selected_contact:
+            self.display_messages()
+            self.last_message_received = None
+            time.sleep(.2)
 
     def handle_state(self):
         print("List of possibles commands:")
