@@ -16,7 +16,6 @@ class ChatServer:
         self.users_counter = 0
         self.online_users: Dict[str, User] = {}
         self.offline_users: Dict[str, User] = {}
-        self.unauthenticated_users: Dict[str, User] = {}
         self.groups: Dict[str, Group] = {}
         self.groups_counter = 0
 
@@ -70,9 +69,6 @@ class ChatServer:
             thread = threading.Thread(target=user.start)
             thread.start()
 
-    def register_unauthenticated_user(self, addr, user):
-        self.unauthenticated_users[addr] = user
-
     def register_user(self, addr, id, user: User):
         try:
             self.online_users[id] = user
@@ -80,10 +76,6 @@ class ChatServer:
 
             # Adding user on DB
             self.db.create_user(id)
-
-            # Removing user from without authentication ones by your addr
-            if addr in self.unauthenticated_users:
-                del self.unauthenticated_users[addr]
 
         except Exception as e:
             print("Error on register an user: ", e)
@@ -95,9 +87,6 @@ class ChatServer:
                 self.online_users[id] = user
                 del self.offline_users[id]
                 
-                # Removing user from without authentication ones by your addr
-                if addr in self.unauthenticated_users:
-                    del self.unauthenticated_users[addr]
                 return True
             return False
         
