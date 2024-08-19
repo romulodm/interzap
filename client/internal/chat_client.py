@@ -1,7 +1,7 @@
 from socket import *
 import keyboard
 import threading
-import time
+import time as t
 
 from internal.client import Client
 from util.convert_posix import convert_posix_to_hours
@@ -48,8 +48,13 @@ class ChatClient:
                     # Here I divide each part of the message received based on the expected protocol
                     sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
                     
-                    self.last_message_received = sender_id
-                    self.client.add_message(sender_id, receiver_id, msg, time)
+                    if receiver_id[:5] == "Group":
+                        self.client.add_group_message(sender_id, receiver_id, msg, time)
+                        self.last_group_message = receiver_id
+                        
+                    else:
+                        self.last_message_received = sender_id
+                        self.client.add_message(sender_id, receiver_id, msg, time)
 
                 elif message[:2] == "07": # Message delivered
 
@@ -65,8 +70,11 @@ class ChatClient:
 
                 elif message[:2] == "11": # I'm a part of group now
 
-                    # TODO: separate the group creation string and add the group to contacts
-                    pass
+                    # Parse the group creation message
+                    group_id = message[2:15]
+
+                    # He i add the group to contacts
+                    self.client.add_contact(group_id)
                             
             except Exception as e:
                 print(f"An error occurred on handler a message received: {e}")
@@ -80,7 +88,7 @@ class ChatClient:
             if message == "1":
                 self.client_socket.send(b'01')
                 print("Processing your registration request...")
-                time.sleep(0.5)
+                t.sleep(0.5)
                 return True
 
             elif message == "2":
@@ -92,7 +100,7 @@ class ChatClient:
                     if len(id) == 13:
                         self.client_socket.send(f"03{id}".encode("utf-8"))
                         print("Processing your login request...")
-                        time.sleep(0.5)
+                        t.sleep(0.5)
                         break
                     else: 
                         print("Invalid ID - must be have 13 digits.")
@@ -131,10 +139,13 @@ class ChatClient:
                 for i, contact in enumerate(sorted_contacts, start=1):
                     print(f"{i} - {contact}")
 
-                choice = input('Which contact or group do you want to talk to? Enter the number or type "N" to cancel ')
+                choice = input('Which contact or group do you want to talk to? Enter the number or type "N" to cancel: ')
                 if str(choice) == "N" or choice == str("n"):
                     self.state = None
                     break
+
+                elif any(char.isalpha() for char in choice):
+                    print("Your choice contains letters, choose a contact with numbers.")
 
                 elif 1 <= int(choice) <= len(sorted_contacts) and choice.isdigit():
                     self.selected_contact = sorted_contacts[int(choice) - 1]
@@ -146,24 +157,39 @@ class ChatClient:
     def chat(self):
         try:
             self.display_messages()
-            print('Press ENTER to type your message or press "N" to exit!')
+            print('Press "SHIFT" to type a new message or press "ESC" to exit.')
+
             while self.selected_contact:
-                if keyboard.is_pressed('n') or keyboard.is_pressed('N'):
+                if keyboard.is_pressed('escape'):
                     self.state = "LIST_CONTACTS_AND_GROUPS"
                     self.selected_contact = None
+                    break
                 
-                if keyboard.is_pressed('enter'):
-                    msg = input('Type your message or press ENTER to return: ')
+                if keyboard.is_pressed('shift'):
+                    msg = input('Type your message or type "C" to cancel: ')
                     if len(msg) > 218:
                         print("Your message is too long (max 218 characters).")
-                        print('Press ENTER to type your message or press "N" to exit!')
-
-                    elif len(msg) > 0:
-                        self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(time.time())[:10]}{msg}".encode("utf-8"))
+                        print('Press "SHIFT" to type a new message or press "ESC" to exit.')
+                        
+                    elif msg != "C" and msg != "c":
+                        self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(t.time())[:10]}{msg}".encode("utf-8"))
                         self.client.add_message(self.client.id, self.selected_contact, msg)
-                        print('Press ENTER to type your message or press "N" to exit!')
+                        self.display_messages()
+                        print('Press "SHIFT" to type a new message or press "ESC" to exit.')
+                    
+                    else:
+                        print('Press "SHIFT" to type a new message or press "ESC" to exit.')
 
-                self.check_for_new_messages()
+                    t.sleep(.1)
+                
+                # Checking for new messages using self.last_message_received
+                if self.selected_contact and self.last_message_received == self.selected_contact:
+                    self.last_message_received = None
+                    keyboard.clear_all_hotkeys()     
+                    self.display_messages() 
+                    print('Press "SHIFT" to type a new message or press "ESC" to exit.') 
+                
+                t.sleep(.1)
 
         except Exception as e:
             print("An error ocurred on chat: ", e)
@@ -175,17 +201,11 @@ class ChatClient:
         for message in messages:
             print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}")
             if message['delivered'] == True and message['read'] == True:
-                print('✓✓✓')
+                print('✓✓✓\n')
             elif  message['delivered'] == True and message['read'] == False:
-                print('✓✓')
+                print('✓✓\n')
             else:
-                print('✓')
-
-    def check_for_new_messages(self):
-        if self.selected_contact and self.last_message_received == self.selected_contact:
-            self.display_messages()
-            self.last_message_received = None
-            time.sleep(.2)
+                print('✓\n')
 
     def handle_state(self):
         print("List of possibles commands:")
@@ -268,7 +288,7 @@ Connected on Interzap 1.0 © 2024
             receive_thread = threading.Thread(target=self.handle_messages)
             receive_thread.start()
             
-            time.sleep(0.5)
+            t.sleep(0.5)
             self.handle_user_input()
         
         except Exception as e:
