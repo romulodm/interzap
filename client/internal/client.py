@@ -33,7 +33,7 @@ class Client:
             'sender': sender_id,
             'time': int(timestamp),
             'content': content,
-            'delivered': False,
+            'delivered': False if sender_id == self.id else True,
             'read': False
         }
         
@@ -44,14 +44,33 @@ class Client:
             self.messages[receiver_id].append(message_data)
             self.messages[receiver_id].sort(key=lambda x: x['time'])
         
-        # If I received the message, I use sener_id to save on JSON
+        # If I received the message, I use sender_id to save on JSON
         else:
             if sender_id not in self.messages:
                 self.messages[sender_id] = []
+
+            if sender_id not in self.contacts:
+                self.contacts.append(sender_id)
+
             self.messages[sender_id].append(message_data)
             self.messages[sender_id].sort(key=lambda x: x['time'])
 
         self.save_data_to_file()
+
+    def add_group_message(self, sender_id, group_id, content, timestamp=None):
+        if timestamp is None:
+            timestamp = int(time.time())
+        
+        message_data = {
+            'sender': sender_id,
+            'time': int(timestamp),
+            'content': content,
+        }
+
+        if group_id not in self.messages:
+            self.messages[group_id] = []
+        self.messages[group_id].append(message_data)
+        self.messages[group_id].sort(key=lambda x: x['time'])
 
     def make_message_delivered(self, receiver_id, timestamp):
         for message in self.messages[receiver_id]:
