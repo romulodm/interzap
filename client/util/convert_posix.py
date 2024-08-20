@@ -10,4 +10,4 @@ def convert_posix_to_hours(posix):
     utc_time = datetime.fromtimestamp(posix)
 
     # Convert the datetime object to the São Paulo time zone
-    return utc_time.replace(tzinfo=pytz.utc).astimezone(timezone).strftime('%H:%M')
+    return utc_time.replace(tzinfo=pytz.utc).astimezone(timezone).strftime('%d/%m %H:%M')
