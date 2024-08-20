@@ -60,13 +60,15 @@ class ChatClient:
 
                     # Here I divide each part of the message received based on the expected protocol
                     receiver_id, time = message[2:15], message[15:25]
-                    self.client.make_message_delivered(receiver_id, time)
+                    if receiver_id[:5] != "Group":
+                        self.client.make_message_delivered(receiver_id, time)
 
                 elif message[:2] == "09": # Message read
 
                     # Here I divide each part of the message received based on the expected protocol
                     receiver_id, time = message[2:15], message[15:25]
-                    self.client.make_message_read(receiver_id, time)
+                    if receiver_id[:5] != "Group":
+                        self.client.make_message_read(receiver_id, time)
 
                 elif message[:2] == "11": # I'm a part of group now
 
@@ -275,6 +277,8 @@ class ChatClient:
     def send_confirm_read(self):
         if self.selected_contact[:5] == "Group":
             return False
+        
+        print("make")
         
         self.client.make_all_messages_read(self.selected_contact)
         
