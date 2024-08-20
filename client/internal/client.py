@@ -60,22 +60,24 @@ class Client:
         self.save_data_to_file()
 
     def add_group_message(self, sender_id, group_id, content, timestamp=None):
-        if timestamp is None:
-            timestamp = int(time.time())
+        try:
+            if timestamp is None:
+                timestamp = int(time.time())
         
-        message_data = {
-            'sender': sender_id,
-            'time': int(timestamp),
-            'content': content,
-        }
+            message_data = {
+                'sender': sender_id,
+                'time': int(timestamp),
+                'content': content,
+            }
 
-        if group_id not in self.messages:
-            self.messages[group_id] = []
-        self.messages[group_id].append(message_data)
-        self.messages[group_id].sort(key=lambda x: x['time'])
-        
-        self.save_data_to_file()
-
+            if group_id not in self.messages:
+                self.messages[group_id] = []
+            self.messages[group_id].append(message_data)
+            self.messages[group_id].sort(key=lambda x: x['time'])
+            
+            self.save_data_to_file()
+        except Exception as e:
+            print("Error on add_group_message: ", e)
     def make_message_delivered(self, receiver_id, timestamp):
         try:
             for message in self.messages[receiver_id]:
@@ -96,6 +98,16 @@ class Client:
 
         except Exception as e:
             print("An error ocurred on make_message_read method on Client class: ", e)
+
+    def make_all_messages_read(self, receiver_id):
+        try:
+            # Mark all unread messages as read
+            for message in self.messages.get(receiver_id, []):
+                if not message['read']:
+                    message['read'] = True
+            self.save_data_to_file()
+        except Exception as e:
+            print("An error occurred in make_all_messages_read method: ", e)
 
     def save_data_to_file(self):
         filename = f"client/backups/{self.id}.json"
