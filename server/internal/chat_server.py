@@ -153,13 +153,17 @@ class ChatServer:
             self.db.add_user_to_group(member_id, group.id)
             
         self.db.add_user_to_group(id_creator, group.id)
+        
+        str_members = ""
+        for member_id in members:
+            str_members += member_id
 
         for member_id in members:
             if member_id in self.online_users:
-                self.online_users[member_id].conn.sendall(f"11{group.id}{time}{members}".encode("utf-8"))
+                self.online_users[member_id].conn.sendall(f"11{group.id}{time}{str_members}".encode("utf-8"))
             else:
                 # Inserting the message on "pending messages" table on SQLite
-                self.db.add_pending_message(member_id, f"11{group.id}{time}{members}", int(time))
+                self.db.add_pending_message(member_id, f"11{group.id}{time}{str_members}", int(time))
 
         if id_creator in self.online_users:
             self.online_users[id_creator].conn.sendall(f"11{group.id}{time}{members}".encode("utf-8"))
