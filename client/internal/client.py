@@ -10,20 +10,22 @@ class Client:
         self.load_data_from_file()
 
     def add_contact(self, id):
-        if id not in self.contacts:
+        if id == self.id:
+            print(f"You can't add it yourself.")
+        elif id not in self.contacts:
             self.contacts.append(id)
             self.save_data_to_file()
-            print("Contact added.")
+            print(f"Contact {id} added.")
         else:
-            print("You have already added this contact.")
+            print(f"You have already added this {id} contact.")
 
     def remove_contact(self, id):
         if id in self.contacts:
             self.contacts.remove(id)
             self.save_data_to_file()
-            print("Contact removed.")
+            print(f"Contact {id} removed.")
         else:
-            print("Contact does not exist.")
+            print(f"Contact {id} does not exist.")
 
     def add_message(self, sender_id, receiver_id, content, timestamp=None):
         if timestamp is None:
@@ -71,11 +73,13 @@ class Client:
             self.messages[group_id] = []
         self.messages[group_id].append(message_data)
         self.messages[group_id].sort(key=lambda x: x['time'])
+        
+        self.save_data_to_file()
 
     def make_message_delivered(self, receiver_id, timestamp):
         try:
             for message in self.messages[receiver_id]:
-                if message['time'] <= timestamp and message['delivered'] != True:
+                if int(message['time']) <= int(timestamp) and message['delivered'] != True:
                     message['delivered'] = True
             self.save_data_to_file()
         
@@ -85,7 +89,7 @@ class Client:
     def make_message_read(self, receiver_id, timestamp):
         try:
             for message in self.messages[receiver_id]:
-                if message['time'] <= timestamp and message['read'] != True:
+                if int(message['time']) <= int(timestamp) and message['read'] != True:
                     message['read'] = True
             
             self.save_data_to_file()
