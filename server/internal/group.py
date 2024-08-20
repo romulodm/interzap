@@ -3,10 +3,9 @@ from typing import List
 from internal.user import User
 
 class Group:
-    def __init__(self, server, creator_id, time, users):
+    def __init__(self, server, time, users, id=None):
         self.server = server
-        self.id = self.generate_group_id()
-        self.id_creator = creator_id
+        self.id = id
         self.creation = time
         self.users = users
 

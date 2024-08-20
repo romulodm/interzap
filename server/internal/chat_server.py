@@ -43,7 +43,7 @@ class ChatServer:
             # Create groups intances and place them in self.groups
             members = self.db.get_group_members(group_id)
             member_ids = [member[0] for member in members]
-            self.groups[group_id] = Group(group_id, None, member_ids)
+            self.groups[group_id] = Group(self, None, member_ids, group_id)
 
     def load_pending_messages(self, id):
         return self.db.get_pending_messages(id)
@@ -146,7 +146,9 @@ class ChatServer:
             self.online_users[id_source].conn.sendall(f"09{id_receiver}{time}")
 
     def create_group(self, id_creator, time, members):
-        group = Group(self, id_creator, time, members)
+        group = Group(self, time, members)
+        group.generate_group_id()
+
         self.db.create_group(group.id)
 
         for member_id in members:
