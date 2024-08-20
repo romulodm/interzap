@@ -13,7 +13,43 @@ In short, we needed to build an application similar to Whatsapp following the pr
 
 <br>
 
-# :clipboard: Features
+## :mag_right: Table of Contents
+
+- [Architechture](#architechture)
+- [Features](#features)
+- [Usage](#usage)
+
+## Architechture
+
+Interzap's architecture is designed to support real-time communication between clients and servers using sockets. Below is an overview of the main components and how they interact:
+
+```
+interzap/
+│
+├── server/                  # Directory containing the server code
+│   ├── internal/            # Internal server logic
+│   │   ├── chat_server.py   # Main server class that handles requests
+│   │   ├── database.py      # Class for managing the SQLite database
+│   │   ├── group.py         # Class for managing users in a group
+│   │   └── user.py          # Secondary class for handling individual messages in a thread
+│   └── main.py              # Script to start the server
+│
+├── client/                  # Directory containing the client code
+│   ├── backup/              # Directory for storing client messages
+│   │   ├── Client-000000.py # Example of how messages are stored
+│   ├── internal/            # Internal client logic
+│   │   ├── chat_client.py   # Main client class
+│   │   └── client.py        # Secondary class for managing messages and contacts
+│   ├── util/                # Directory for utility functions
+│   │   └── convert_posix.py # Functions to convert POSIX timestamps to standard dates
+│   └── main.py              # Script to start the client
+│
+├── README.md                # This file
+├── host.py                  # File that defines (or not) the HOST_IP
+└── requirements.txt         # Libraries and packages used
+```
+
+## Features
 
 :heavy_check_mark: `Login`
 
@@ -29,9 +65,8 @@ In short, we needed to build an application similar to Whatsapp following the pr
 
 :heavy_check_mark: `Save client message history (using .json)`
 
-<br>
 
-# :hammer_and_wrench: To test the project
+## Usage
 - Run `pip install -r requirements.txt`
 - Run `python server/main.py` in the base directory to start the server
 - Run `python client/main.py` in the base directory (as many times you want) to open the clients that will consume the server
