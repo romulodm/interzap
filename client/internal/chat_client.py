@@ -140,7 +140,11 @@ class ChatClient:
                     print(f"{i} - {contact}")
 
                 choice = input('Which contact or group do you want to talk to? Enter the number or type "C" to cancel: ')
-                if str(choice) == "C" or choice == str("c"):
+                if choice.strip() == "":
+                    print("Invalid choice, please enter a number corresponding to the contacts/groups listed.\n")
+                    continue
+
+                elif str(choice) == "C" or choice == str("c"):
                     self.state = None
                     print()
                     break
@@ -221,6 +225,7 @@ class ChatClient:
         try:
             self.display_messages()
             print('Press "SHIFT" to type a new message or press "ESC" to exit.')
+            self.send_confirm_read()
 
             while self.selected_contact:
                 if keyboard.is_pressed('escape'):
@@ -229,7 +234,7 @@ class ChatClient:
                     break
                 
                 if keyboard.is_pressed('shift'):
-                    msg = input('Type your message or type "C" to cancel: ')
+                    msg = input(f'Type your message or type "C" to cancel ({self.client.id}): ')
                     if len(msg) > 218:
                         print("Your message is too long (max 218 characters).")
                         print('Press "SHIFT" to type a new message or press "ESC" to exit.')
@@ -253,7 +258,8 @@ class ChatClient:
                 # Checking for new messages using self.last_message_received
                 if self.selected_contact and self.last_message_received == self.selected_contact:
                     self.last_message_received = None
-                    keyboard.clear_all_hotkeys()     
+                    keyboard.clear_all_hotkeys()
+                    self.send_confirm_read()     
                     self.display_messages() 
                     print('Press "SHIFT" to type a new message or press "ESC" to exit.') 
                 
@@ -262,6 +268,20 @@ class ChatClient:
         except Exception as e:
             print("An error ocurred on chat: ", e)
             self.selected_contact = None
+
+    def send_confirm_read(self):
+        messages = self.client.get_messages_with_contact(self.selected_contact)
+        if len(messages) > 0:
+            try:
+                # I filter to get only the other client messages
+                messages_from_other = [msg for msg in messages if msg['sender'] != self.client.id]
+                last_message = messages_from_other[-1]
+
+                # I send the oldest message because the method that changes the message status makes a "for" that checks the time received on self.client.make_message_read()
+                self.client_socket.sendall(f"08{last_message['sender']}{last_message['time']}".encode("utf-8"))
+                t.sleep(.1)
+            except Exception as e:
+                print("An error ocurred on send_confirm_read: ", e)
     
     def display_messages(self):
         try:
@@ -272,12 +292,15 @@ class ChatClient:
                 
                 # Checking here why group messages don't have 'delivered' and 'read'
                 if self.selected_contact[:5] != "Group":
+                     
                     if message['delivered'] == True and message['read'] == True:
                         print('✓✓✓\n')
                     elif  message['delivered'] == True and message['read'] == False:
                         print('✓✓\n')
                     else:
                         print('✓\n')
+                    
+
                 else:
                     print('✓\n')
 
