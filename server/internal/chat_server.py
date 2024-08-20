@@ -21,6 +21,9 @@ class ChatServer:
     def close(self):
         self.server_socket.close()
 
+    def increasing_groups_counter(self):
+        self.groups_counter += 1
+
     def load_users_from_db(self):
         # Load all users from the database
         users = self.db.get_all_users()
@@ -109,7 +112,10 @@ class ChatServer:
             for member_id in self.groups[id_group].users:
                 
                 if member_id in self.online_users:
-                    self.online_users[member_id].conn.sendall(f"06{id_sender}{id_group}{time}{message}".encode("utf-8"))
+                    
+                    # Checking here to not have a repeated message in the client who sent the message
+                    if id_sender != member_id:
+                        self.online_users[member_id].conn.sendall(f"06{id_sender}{id_group}{time}{message}".encode("utf-8"))
                 
                 elif member_id in self.offline_users:
                     # Inserting the message on "pending messages" table on SQLite
