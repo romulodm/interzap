@@ -31,6 +31,7 @@ class Database:
         self.cursor.execute("DROP TABLE IF EXISTS user_groups")
         self.cursor.execute("DROP TABLE IF EXISTS users")
         self.cursor.execute("DROP TABLE IF EXISTS groups")
+        self.cursor.execute("DROP TABLE IF EXISTS pending_messages")
         self.conn.commit()
         self.start_db()
 
