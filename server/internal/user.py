@@ -60,7 +60,7 @@ class User:
             
             # Here I divide each part of the message received based on the expected protocol
             sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
-
+            print("Message on server: ", sender_id, receiver_id, msg)
             if receiver_id[:5] == "Group":
                 self.server.send_message_group(receiver_id, sender_id, time, msg)
             else:
@@ -101,8 +101,8 @@ class User:
         if pending_messages:
             for msg_tuple in pending_messages:
                 msg = msg_tuple[0]
-                print(msg_tuple[0])
                 self.conn.sendall(f'{msg}'.encode("utf-8"))
+                time.sleep(.15)
             
             self.server.db.delete_pending_messages(self.id)
 
