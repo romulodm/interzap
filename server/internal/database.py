@@ -84,7 +84,6 @@ class Database:
     
     # Pending messages
     def add_pending_message(self, receiver_id, message, time):
-        print("PENDING:",receiver_id, message, time)
         try:
             self.cursor.execute("""
                 INSERT INTO pending_messages (receiver_id, message, timestamp)
