@@ -134,7 +134,7 @@ class ChatServer:
                 # With sendall method: None is returned on success
                 if error == None:
                     # So if the message was sent, I confirm delivery to the sender
-                    error = self.online_users[id_sender].conn.sendall(f"07{id_receiver}{time}".encode("utf-8"))
+                    self.send_confirm_delivered(id_sender, id_receiver, time)
 
             except Exception as e:
                 print("An error ocurred on send message.")
@@ -147,9 +147,25 @@ class ChatServer:
             # If the user is not in the dictionaries, we warn that
             print(f"Error on send_message -> the user {id_receiver} does not exist.")
 
+    def send_confirm_delivered(self, id_sender, id_receiver, time):
+        if id_sender in self.online_users:
+            self.online_users[id_sender].conn.sendall(f"07{id_receiver}{time}".encode("utf-8"))
+        elif id_sender in self.offline_users:
+            self.db.add_pending_message(id_sender, f"07{id_receiver}{time}", time)
+        else:
+            print(f"Error on send_confirm_delivered, user {id_sender} does not exists.")
+
     def confirm_read(self, id_source, time, id_receiver):
-        if id_source in self.online_users:
-            self.online_users[id_source].conn.sendall(f"09{id_receiver}{time}")
+        try: 
+            if id_source in self.online_users:
+                self.online_users[id_source].conn.sendall(f"09{id_receiver}{time}".encode("utf-8"))
+            elif id_source in self.offline_users:
+                self.db.add_pending_message(id_source, f"09{id_receiver}{time}", int(time))
+            else:
+                print(f"Problem in confirm_read method, user {id_source} does not exists.")
+        
+        except Exception as e:
+            print("An error ocurred on confirm_read method: ", e)
 
     def create_group(self, id_creator, time, members):
         group = Group(self, time, members)

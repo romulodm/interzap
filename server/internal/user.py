@@ -100,8 +100,18 @@ class User:
         if pending_messages:
             for msg_tuple in pending_messages:
                 msg = msg_tuple[0]
-                self.conn.sendall(f'{msg}'.encode("utf-8"))
+                error = self.conn.sendall(f'{msg}'.encode("utf-8"))
+                
                 time.sleep(.15)
+                
+                # If the message is of the message type, I need to confirm to the person who sent it that it was delivered
+                if msg[:2] == "06":
+                    if error == None:
+                        # So if the message was sent, I confirm delivery to the sender
+                        sender_id, receiver_id, timestamps = msg[2:15], msg[15:28], msg[28:38]
+
+                        # This is the method that confirms
+                        self.server.send_confirm_delivered(sender_id, receiver_id, timestamps)
             
             self.server.db.delete_pending_messages(self.id)
 
