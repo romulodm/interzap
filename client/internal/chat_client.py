@@ -47,10 +47,10 @@ class ChatClient:
 
                     # Here I divide each part of the message received based on the expected protocol
                     sender_id, receiver_id, time, msg = message[2:15], message[15:28], message[28:38], message[38:]
-                    
+
                     if receiver_id[:5] == "Group":
+                        self.last_message_received = receiver_id
                         self.client.add_group_message(sender_id, receiver_id, msg, time)
-                        self.last_group_message = receiver_id
                         
                     else:
                         self.last_message_received = sender_id
@@ -142,6 +142,7 @@ class ChatClient:
                 choice = input('Which contact or group do you want to talk to? Enter the number or type "C" to cancel: ')
                 if str(choice) == "C" or choice == str("c"):
                     self.state = None
+                    print()
                     break
 
                 elif any(char.isalpha() for char in choice):
@@ -155,52 +156,54 @@ class ChatClient:
                     print("Invalid choice, please enter a number corresponding to the contacts/groups listed.\n")
 
     def handle_new_group(self):
-        print()
-        if not self.client.contacts:
-            print("You have no contacts to add to a group.")
+        try:
+            print()
+            if not self.client.contacts:
+                print("You have no contacts to add to a group.")
 
-        sorted_contacts = sorted(self.client.contacts)
-        non_group_contacts = [contact for contact in sorted_contacts if not contact.startswith("Group-")]
+            sorted_contacts = sorted(self.client.contacts)
+            non_group_contacts = [contact for contact in sorted_contacts if not contact.startswith("Group-")]
 
-        print("Your contacts:")
+            print("Your contacts:")
 
-        if not non_group_contacts:
-            print("You have no individual contacts to add to a group.")
-            return
-        
-        for i, contact in enumerate(non_group_contacts, start=1):
-            print(f"{i} - {contact}")
+            if not non_group_contacts:
+                print("You have no individual contacts to add to a group.")
+                return
+            
+            for i, contact in enumerate(non_group_contacts, start=1):
+                print(f"{i} - {contact}")
 
-        group_contacts = []
+            group_contacts = []
 
-        while len(group_contacts) < 8:
-            choice = input('Enter the number of the contact you want to add to the group, or type "D" when done: ')
+            while len(group_contacts) < 8:
+                choice = input('Enter the number of the contact you want to add to the group, or type "D" when done: ')
 
-            if choice.lower() == "d":
-                self.state = None
-                break
+                if choice.lower() == "d":
+                    self.state = None
+                    print()
+                    break
 
-            elif any(char.isalpha() for char in choice) or not choice.isdigit():
-                print("Invalid input, please enter a valid number corresponding to the contacts listed.")
-                continue
+                elif any(char.isalpha() for char in choice) or not choice.isdigit():
+                    print("Invalid input, please enter a valid number corresponding to the contacts listed.\n")
+                    continue
 
-            index = int(choice) - 1
+                index = int(choice) - 1
 
-            if index < 0 or index >= len(non_group_contacts):
-                print("Invalid choice, please enter a number corresponding to the contacts listed.")
-                continue
+                if index < 0 or index >= len(non_group_contacts):
+                    print("Invalid choice, please enter a number corresponding to the contacts listed.\n")
+                    continue
 
-            selected_contact = non_group_contacts[index]
+                selected_contact = non_group_contacts[index]
 
-            if selected_contact in group_contacts:
-                print(f"{selected_contact} is already in the group.")
-            else:
-                group_contacts.append(selected_contact)
-                print(f"{selected_contact} added to the group.")
+                if selected_contact in group_contacts:
+                    print(f"{selected_contact} is already in the group.\n")
+                else:
+                    group_contacts.append(selected_contact)
+                    print(f"{selected_contact} added to the group.\n")
 
-            if len(group_contacts) == 8:
-                print("Maximum number of contacts (8) reached.")
-                break
+                if len(group_contacts) == 8:
+                    print("Maximum number of contacts (8) reached.\n")
+                    break
 
             if group_contacts:
                 str_members = ""
@@ -210,6 +213,9 @@ class ChatClient:
                 self.client_socket.sendall(f"10{self.client.id}{str(t.time())[:10]}{str_members}".encode("utf-8"))
             else:
                 print("No group created.")
+        
+        except Exception as e:
+            print("An error ocurred on handle_new_group method: ", e)
 
     def chat(self):
         try:
@@ -230,7 +236,12 @@ class ChatClient:
                         
                     elif msg != "C" and msg != "c":
                         self.client_socket.sendall(f"05{self.client.id}{self.selected_contact}{str(t.time())[:10]}{msg}".encode("utf-8"))
-                        self.client.add_message(self.client.id, self.selected_contact, msg)
+                        
+                        if self.selected_contact[:5] == "Group":
+                            self.client.add_group_message(self.client.id, self.selected_contact, msg)
+                        else:
+                            self.client.add_message(self.client.id, self.selected_contact, msg)
+
                         self.display_messages()
                         print('Press "SHIFT" to type a new message or press "ESC" to exit.')
                     
@@ -253,16 +264,25 @@ class ChatClient:
             self.selected_contact = None
     
     def display_messages(self):
-        print(f"\nYour messages with {self.selected_contact} user:\n")
-        messages = self.client.get_messages_with_contact(self.selected_contact)
-        for message in messages:
-            print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}")
-            if message['delivered'] == True and message['read'] == True:
-                print('✓✓✓\n')
-            elif  message['delivered'] == True and message['read'] == False:
-                print('✓✓\n')
-            else:
-                print('✓\n')
+        try:
+            print(f"\nYour messages with {self.selected_contact} user:\n")
+            messages = self.client.get_messages_with_contact(self.selected_contact)
+            for message in messages:
+                print(f"[{convert_posix_to_hours(message['time'])}] {message['sender']}: {message['content']}")
+                
+                # Checking here why group messages don't have 'delivered' and 'read'
+                if self.selected_contact[:5] != "Group":
+                    if message['delivered'] == True and message['read'] == True:
+                        print('✓✓✓\n')
+                    elif  message['delivered'] == True and message['read'] == False:
+                        print('✓✓\n')
+                    else:
+                        print('✓\n')
+                else:
+                    print('✓\n')
+
+        except Exception as e:
+            print("An error ocurred on display_messages method on chat_client: ", e)
 
     def handle_state(self):
         print("List of possibles commands:")
