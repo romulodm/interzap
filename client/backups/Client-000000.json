@@ -1,0 +1,30 @@
+{
+    "contacts": [
+        "Client-000001"
+    ],
+    "messages": {
+        "Client-000001": [
+            {
+                "sender": "Client-000001",
+                "time": 1724013323,
+                "content": "Hello, friend!",
+                "delivered": true,
+                "read": false
+            },
+            {
+                "sender": "Client-000000",
+                "time": 1724013424,
+                "content": "I hope you like!",
+                "delivered": true,
+                "read": false
+            },
+            {
+                "sender": "Client-000001",
+                "time": 1724019872,
+                "content": ":)",
+                "delivered": true,
+                "read": false
+            }
+        ]
+    }
+}
