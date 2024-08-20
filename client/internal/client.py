@@ -73,18 +73,25 @@ class Client:
         self.messages[group_id].sort(key=lambda x: x['time'])
 
     def make_message_delivered(self, receiver_id, timestamp):
-        for message in self.messages[receiver_id]:
-            if message['time'] <= timestamp and message['delivered'] != True:
-                message['delivered'] = True
-       
-        self.save_data_to_file()
+        try:
+            for message in self.messages[receiver_id]:
+                if message['time'] <= timestamp and message['delivered'] != True:
+                    message['delivered'] = True
+            self.save_data_to_file()
+        
+        except Exception as e:
+            print("An error ocurred on make_message_delivered method on Client class: ", e)
 
     def make_message_read(self, receiver_id, timestamp):
-        for message in self.messages[receiver_id]:
-            if message['time'] <= timestamp and message['read'] != True:
-                message['read'] = True
-          
-        self.save_data_to_file()
+        try:
+            for message in self.messages[receiver_id]:
+                if message['time'] <= timestamp and message['read'] != True:
+                    message['read'] = True
+            
+            self.save_data_to_file()
+
+        except Exception as e:
+            print("An error ocurred on make_message_read method on Client class: ", e)
 
     def save_data_to_file(self):
         filename = f"client/backups/{self.id}.json"
