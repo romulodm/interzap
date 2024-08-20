@@ -278,8 +278,6 @@ class ChatClient:
         if self.selected_contact[:5] == "Group":
             return False
         
-        print("make")
-        
         self.client.make_all_messages_read(self.selected_contact)
         
         messages = self.client.get_messages_with_contact(self.selected_contact)

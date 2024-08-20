@@ -168,16 +168,17 @@ class ChatServer:
             print("An error ocurred on confirm_read method: ", e)
 
     def create_group(self, id_creator, time, members):
+        members.append(id_creator)
+
         group = Group(self, time, members)
         group.generate_group_id()
 
         self.db.create_group(group.id)
+        self.groups[group.id] = group
 
         for member_id in members:
             self.db.add_user_to_group(member_id, group.id)
-            
-        self.db.add_user_to_group(id_creator, group.id)
-        
+                    
         str_members = ""
         for member_id in members:
             str_members += member_id
