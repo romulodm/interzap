@@ -10,5 +10,6 @@ class Group:
         self.users = users
 
     def generate_group_id(self):
-        return f'Group-{self.server.groups_counter + 1:07d}'
+        self.id = f'Group-{self.server.groups_counter + 1:07d}'
+        self.server.increasing_groups_counter()
     
