@@ -139,13 +139,13 @@ class ChatClient:
                 for i, contact in enumerate(sorted_contacts, start=1):
                     print(f"{i} - {contact}")
 
-                choice = input('Which contact or group do you want to talk to? Enter the number or type "N" to cancel: ')
-                if str(choice) == "N" or choice == str("n"):
+                choice = input('Which contact or group do you want to talk to? Enter the number or type "C" to cancel: ')
+                if str(choice) == "C" or choice == str("c"):
                     self.state = None
                     break
 
                 elif any(char.isalpha() for char in choice):
-                    print("Your choice contains letters, choose a contact with numbers.")
+                    print("Your choice contains letters, choose a contact with numbers.\n")
 
                 elif 1 <= int(choice) <= len(sorted_contacts) and choice.isdigit():
                     self.selected_contact = sorted_contacts[int(choice) - 1]
@@ -153,6 +153,63 @@ class ChatClient:
 
                 else:
                     print("Invalid choice, please enter a number corresponding to the contacts/groups listed.\n")
+
+    def handle_new_group(self):
+        print()
+        if not self.client.contacts:
+            print("You have no contacts to add to a group.")
+
+        sorted_contacts = sorted(self.client.contacts)
+        non_group_contacts = [contact for contact in sorted_contacts if not contact.startswith("Group-")]
+
+        print("Your contacts:")
+
+        if not non_group_contacts:
+            print("You have no individual contacts to add to a group.")
+            return
+        
+        for i, contact in enumerate(non_group_contacts, start=1):
+            print(f"{i} - {contact}")
+
+        group_contacts = []
+
+        while len(group_contacts) < 8:
+            choice = input('Enter the number of the contact you want to add to the group, or type "D" when done: ')
+
+            if choice.lower() == "d":
+                self.state = None
+                break
+
+            elif any(char.isalpha() for char in choice) or not choice.isdigit():
+                print("Invalid input, please enter a valid number corresponding to the contacts listed.")
+                continue
+
+            index = int(choice) - 1
+
+            if index < 0 or index >= len(non_group_contacts):
+                print("Invalid choice, please enter a number corresponding to the contacts listed.")
+                continue
+
+            selected_contact = non_group_contacts[index]
+
+            if selected_contact in group_contacts:
+                print(f"{selected_contact} is already in the group.")
+            else:
+                group_contacts.append(selected_contact)
+                print(f"{selected_contact} added to the group.")
+
+            if len(group_contacts) == 8:
+                print("Maximum number of contacts (8) reached.")
+                break
+
+            if group_contacts:
+                str_members = ""
+                for id in group_contacts:
+                    str_members += id
+                
+                self.client_socket.sendall(f"10{self.client.id}{str(t.time())[:10]}{str_members}".encode("utf-8"))
+            else:
+                print("No group created.")
 
     def chat(self):
         try:
@@ -172,7 +229,7 @@ class ChatClient:
                         print('Press "SHIFT" to type a new message or press "ESC" to exit.')
                         
                     elif msg != "C" and msg != "c":
-                        self.client_socket.send(f"05{self.client.id}{self.selected_contact}{str(t.time())[:10]}{msg}".encode("utf-8"))
+                        self.client_socket.sendall(f"05{self.client.id}{self.selected_contact}{str(t.time())[:10]}{msg}".encode("utf-8"))
                         self.client.add_message(self.client.id, self.selected_contact, msg)
                         self.display_messages()
                         print('Press "SHIFT" to type a new message or press "ESC" to exit.')
@@ -250,7 +307,7 @@ class ChatClient:
                     self.handle_new_contact()
 
                 elif self.client and self.state == "NEW_GROUP":
-                    pass
+                    self.handle_new_group()
 
                 elif self.client and self.state == "LIST_CONTACTS_AND_GROUPS":
                     self.handle_list_contacts()
