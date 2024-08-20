@@ -225,7 +225,9 @@ class ChatClient:
         try:
             self.display_messages()
             print('Press "SHIFT" to type a new message or press "ESC" to exit.')
-            self.send_confirm_read()
+            
+            if self.selected_contact[:5] != "Group":
+                self.send_confirm_read()
 
             while self.selected_contact:
                 if keyboard.is_pressed('escape'):
@@ -259,7 +261,8 @@ class ChatClient:
                 if self.selected_contact and self.last_message_received == self.selected_contact:
                     self.last_message_received = None
                     keyboard.clear_all_hotkeys()
-                    self.send_confirm_read()     
+                    if self.selected_contact[:5] != "Group":
+                        self.send_confirm_read()   
                     self.display_messages() 
                     print('Press "SHIFT" to type a new message or press "ESC" to exit.') 
                 
@@ -270,6 +273,9 @@ class ChatClient:
             self.selected_contact = None
 
     def send_confirm_read(self):
+        if self.selected_contact[:5] == "Group":
+            return False
+        
         messages = self.client.get_messages_with_contact(self.selected_contact)
         if len(messages) > 0:
             try:
